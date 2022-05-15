@@ -13,15 +13,27 @@ public class Hotel implements Serializable {
   private int id;
   @Column(name = "name", columnDefinition = "MEDIUMTEXT")
   private String name;
-  @Column(name = "location_id", nullable = false)
-  private int locationId;
-  @Column(name = "class_id", nullable = false)
-  private int classId;
-  @Column(name = "type_id", nullable = false)
-  private int typeId;
+  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @JoinColumn(name = "class_id")
+  HotelClass hotelClass = new HotelClass();
+
+  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @JoinColumn(name = "type_id")
+  HotelType hotelType = new HotelType();
+
+  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @JoinColumn(name = "location_id")
+  Direction direction = new Direction();
+
   private String disposition;
   @Column(name = "description", columnDefinition = "MEDIUMTEXT")
   private String description;
+
+  @OneToMany(mappedBy = "hotel")
+  private Set<Room> rooms = new HashSet<>();
+
+  @OneToMany(mappedBy = "hotel")
+  private Set<Order> orders = new HashSet<>();
 
   @ManyToMany(cascade = { CascadeType.ALL })
   @JoinTable(
@@ -30,6 +42,16 @@ public class Hotel implements Serializable {
           inverseJoinColumns = { @JoinColumn(name = "excursion_id") }
   )
   Set<Excursion> excursions = new HashSet<>();
+
+
+
+  public HotelClass getHotelClass() {
+    return hotelClass;
+  }
+
+  public void setHotelClass(HotelClass hotelClass) {
+    this.hotelClass = hotelClass;
+  }
 
 
   public int getId() {
@@ -50,30 +72,21 @@ public class Hotel implements Serializable {
   }
 
 
-  public int getLocationId() {
-    return locationId;
+
+  public void setHotelType(HotelType hotelType) {
+    this.hotelType = hotelType;
   }
 
-  public void setLocationId(int locationId) {
-    this.locationId = locationId;
+  public HotelType getHotelType() {
+    return hotelType;
   }
 
-
-  public int getClassId() {
-    return classId;
+  public Direction getDirection() {
+    return direction;
   }
 
-  public void setClassId(int classId) {
-    this.classId = classId;
-  }
-
-
-  public int getTypeId() {
-    return typeId;
-  }
-
-  public void setTypeId(int typeId) {
-    this.typeId = typeId;
+  public void setDirection(Direction direction) {
+    this.direction = direction;
   }
 
 
@@ -102,5 +115,24 @@ public class Hotel implements Serializable {
   public void setExcursions(Set<Excursion> excursions) {
     this.excursions = excursions;
   }
+
+
+  public Set<Room> getRooms() {
+    return rooms;
+  }
+
+  public void setRooms(Set<Room> rooms) {
+    this.rooms = rooms;
+  }
+
+
+  public Set<Order> getOrders() {
+    return orders;
+  }
+
+  public void setOrders(Set<Order> orders) {
+    this.orders = orders;
+  }
+
 
 }

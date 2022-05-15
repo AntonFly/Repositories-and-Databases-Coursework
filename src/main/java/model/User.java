@@ -1,9 +1,8 @@
 package model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -22,6 +21,9 @@ public class User {
   private String email;
   @Column(name = "password", columnDefinition = "TEXT")
   private String password;
+
+  @OneToMany(mappedBy = "user")
+  private Set<Order> orders = new HashSet<>();
 
 
   public int getId() {
@@ -102,6 +104,15 @@ public class User {
 
   public void setPassword(String password) {
     this.password = password;
+  }
+
+
+  public Set<Order> getOrders() {
+    return orders;
+  }
+
+  public void setOrders(Set<Order> orders) {
+    this.orders = orders;
   }
 
 }

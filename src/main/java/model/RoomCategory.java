@@ -11,8 +11,11 @@ public class RoomCategory {
   @Id
   private int id;
   private String name;
-  @Column(name = "level_id", nullable = false)
-  private int levelId;
+
+  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @JoinColumn(name = "level_id")
+  private RoomLevel roomLevel = new RoomLevel();
+
   private int capacity;
   @Column(name = "price", columnDefinition = "DECIMAL")
   private double price;
@@ -21,6 +24,9 @@ public class RoomCategory {
   @Column(name = "price_of_extra_place", columnDefinition = "DECIMAL")
   private double priceOfExtraPlace;
   private String currency;
+
+  @OneToMany(mappedBy = "roomCategory")
+  private Set<Room> rooms = new HashSet<>();
 
   @ManyToMany(cascade = { CascadeType.ALL })
   @JoinTable(
@@ -56,12 +62,12 @@ public class RoomCategory {
   }
 
 
-  public int getLevelId() {
-    return levelId;
+  public RoomLevel getLevel() {
+    return roomLevel;
   }
 
-  public void setLevelId(int levelId) {
-    this.levelId = levelId;
+  public void setLevel(RoomLevel roomLevel) {
+    this.roomLevel = roomLevel;
   }
 
 
@@ -118,6 +124,14 @@ public class RoomCategory {
     this.additionalServices = additionalServices;
   }
 
+
+  public Set<Room> getRooms() {
+    return rooms;
+  }
+
+  public void setRooms(Set<Room> rooms) {
+    this.rooms = rooms;
+  }
 
   public Set<Facility> getFacilities() {
     return facilities;

@@ -4,6 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.util.Objects;
 
 @Entity
 @Table(name = "direction")
@@ -82,6 +83,25 @@ public class Direction {
 
   public void setClimate(String climate) {
     this.climate = climate;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Direction)) return false;
+    Direction direction = (Direction) o;
+    return getId() == direction.getId()
+            && Double.compare(direction.getAveragePrice(), getAveragePrice()) == 0
+            && Double.compare(direction.getFlightPrice(), getFlightPrice()) == 0
+            && getCountry().equals(direction.getCountry())
+            && getCity().equals(direction.getCity())
+            && getCurrency().equals(direction.getCurrency())
+            && Objects.equals(getClimate(), direction.getClimate());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getId(), getCountry(), getCity(), getAveragePrice(), getFlightPrice(), getCurrency(), getClimate());
   }
 
 }

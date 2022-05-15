@@ -1,9 +1,8 @@
 package model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "hotel_class")
@@ -13,6 +12,9 @@ public class HotelClass {
   private int id;
   @Column(name = "name", columnDefinition = "MEDIUMTEXT")
   private String name;
+
+  @OneToMany(mappedBy = "hotelClass")
+  private Set<Hotel> hotels = new HashSet<>();
 
 
   public int getId() {
@@ -30,6 +32,15 @@ public class HotelClass {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+
+  public Set<Hotel> getHotels() {
+    return hotels;
+  }
+
+  public void setHotels(Set<Hotel> hotels) {
+    this.hotels = hotels;
   }
 
 }

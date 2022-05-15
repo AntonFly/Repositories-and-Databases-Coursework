@@ -1,9 +1,8 @@
 package model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "rooms")
@@ -11,11 +10,19 @@ public class Room {
 
   @Id
   private int id;
-  @Column(name = "room_category_id", nullable = false)
-  private int roomCategoryId;
+
+  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @JoinColumn(name = "room_category_id")
+  private RoomCategory roomCategory = new RoomCategory();
+
   private int number;
-  @Column(name = "hotel_id", nullable = false)
-  private int hotelId;
+
+  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @JoinColumn(name = "hotel_id")
+  private Hotel hotel = new Hotel();
+
+  @OneToMany(mappedBy = "room")
+  private Set<Order> orders = new HashSet<>();
 
 
   public int getId() {
@@ -27,12 +34,12 @@ public class Room {
   }
 
 
-  public int getRoomCategoryId() {
-    return roomCategoryId;
+  public RoomCategory getRoomCategory() {
+    return roomCategory;
   }
 
-  public void setRoomCategoryId(int roomCategoryId) {
-    this.roomCategoryId = roomCategoryId;
+  public void setRoomCategory(RoomCategory roomCategory) {
+    this.roomCategory = roomCategory;
   }
 
 
@@ -45,12 +52,21 @@ public class Room {
   }
 
 
-  public int getHotelId() {
-    return hotelId;
+  public Hotel getHotel() {
+    return hotel;
   }
 
-  public void setHotelId(int hotelId) {
-    this.hotelId = hotelId;
+  public void setHotelId(Hotel hotel) {
+    this.hotel = hotel;
+  }
+
+
+  public Set<Order> getOrders() {
+    return orders;
+  }
+
+  public void setOrders(Set<Order> orders) {
+    this.orders = orders;
   }
 
 }

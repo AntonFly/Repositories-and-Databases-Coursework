@@ -1,9 +1,6 @@
 package model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "orders")
@@ -11,12 +8,19 @@ public class Order {
 
   @Id
   private int id;
-  @Column(name = "hotel_id", nullable = false)
-  private int hotelId;
-  @Column(name = "room_id", nullable = false)
-  private int roomId;
-  @Column(name = "user_id", nullable = false)
-  private int userId;
+
+  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @JoinColumn(name = "hotel_id")
+  private Hotel hotel = new Hotel();
+
+  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @JoinColumn(name = "room_id")
+  private Room room = new Room();
+
+  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @JoinColumn(name = "user_id")
+  private User user = new User();
+
   @Column(name = "date_start")
   private java.sql.Date dateStart;
   @Column(name = "date_end")
@@ -32,30 +36,30 @@ public class Order {
   }
 
 
-  public int getHotelId() {
-    return hotelId;
+  public Hotel getHotel() {
+    return hotel;
   }
 
-  public void setHotelId(int hotelId) {
-    this.hotelId = hotelId;
-  }
-
-
-  public int getRoomId() {
-    return roomId;
-  }
-
-  public void setRoomId(int roomId) {
-    this.roomId = roomId;
+  public void setHotel(Hotel hotel) {
+    this.hotel = hotel;
   }
 
 
-  public int getUserId() {
-    return userId;
+  public Room getRoom() {
+    return room;
   }
 
-  public void setUserId(int userId) {
-    this.userId = userId;
+  public void setRoom(Room room) {
+    this.room = room;
+  }
+
+
+  public User getUser() {
+    return user;
+  }
+
+  public void setUser(User user) {
+    this.user = user;
   }
 
 
