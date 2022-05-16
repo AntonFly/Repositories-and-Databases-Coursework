@@ -13,14 +13,14 @@ public class User {
   private String name;
   private String surname;
   private String patronymic;
-  @Column(name = "phone_number", nullable = false)
-  private int phoneNumber;
+  @Column(name = "phone_number", nullable = false, columnDefinition = "INTEGER")
+  private long phoneNumber;
   @Column(name = "bio", columnDefinition = "TEXT")
   private String bio;
   private java.sql.Date birthday;
   private String email;
-  @Column(name = "password", columnDefinition = "TEXT")
-  private String password;
+  @Column(name = "chat_id", columnDefinition = "BIGINT")
+  private long chat_id;
 
   @OneToMany(mappedBy = "user")
   private Set<Order> orders = new HashSet<>();
@@ -62,11 +62,11 @@ public class User {
   }
 
 
-  public int getPhoneNumber() {
+  public long getPhoneNumber() {
     return phoneNumber;
   }
 
-  public void setPhoneNumber(int phoneNumber) {
+  public void setPhoneNumber(long phoneNumber) {
     this.phoneNumber = phoneNumber;
   }
 
@@ -98,12 +98,12 @@ public class User {
   }
 
 
-  public String getPassword() {
-    return password;
+  public long getChatId() {
+    return chat_id;
   }
 
-  public void setPassword(String password) {
-    this.password = password;
+  public void setChatId(long chat_id) {
+    this.chat_id = chat_id;
   }
 
 

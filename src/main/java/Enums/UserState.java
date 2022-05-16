@@ -1,6 +1,10 @@
 package Enums;
 
 public enum UserState {
-    HOTEL,
-    ROOM
+    IDLE,
+    NAME,
+    SURNAME,
+    PHONE,
+    EMAIL,
+    PROCESSING
 }

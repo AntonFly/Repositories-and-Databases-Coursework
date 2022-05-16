@@ -1,6 +1,7 @@
 import Enums.UserState;
 
 public class TelegramUser {
+
     boolean loginflag = false;
     boolean logined = false;
     UserState state = null;
