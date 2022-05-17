@@ -6,5 +6,8 @@ public enum UserState {
     SURNAME,
     PHONE,
     EMAIL,
-    PROCESSING
+    PROCESSING,
+    FIRSTDAME,
+    SECONDDATE,
+    PENDINGCONFIRMATION
 }

@@ -7,17 +7,18 @@ import javax.persistence.*;
 public class Order {
 
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private int id;
 
-  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @ManyToOne(optional=false)
   @JoinColumn(name = "hotel_id")
   private Hotel hotel = new Hotel();
 
-  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @ManyToOne(optional=false )
   @JoinColumn(name = "room_id")
   private Room room = new Room();
 
-  @ManyToOne(optional=false, cascade=CascadeType.ALL)
+  @ManyToOne(optional=false)
   @JoinColumn(name = "user_id")
   private User user = new User();
 

@@ -1,8 +1,6 @@
 import Enums.UserState;
-import model.Direction;
-import model.Hotel;
-import model.Room;
-import model.User;
+import com.sun.org.apache.xpath.internal.operations.Or;
+import model.*;
 import org.hibernate.Session;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -18,7 +16,11 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import persistence.HibernateUtil;
 
 import java.io.File;
+import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,8 +35,11 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     UserState state=UserState.IDLE;
-    String roomId;
+    Room room;
     User user;
+    Order order;
+
+    SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
 
     @Override
     public String getBotToken() {
@@ -51,16 +56,11 @@ public class Bot extends TelegramLongPollingBot {
         Session session = HibernateUtil.getSessionFactory().openSession();
         if (update.hasMessage()) {
             Message message = update.getMessage();
-//            if(users.get(message.getChatId()).equals(null)) {
-//               users.put(message.getChatId(), new TelegramUser(message.getChatId()));
-//               //TODO make login
-//            }
             switch (state){
                 case IDLE:
                     switch (message.getText()) {
-                        case "/Start":
-                            List<Direction> directions = session.createQuery("from Direction", Direction.class).list();
-                            Set<String> countries = directions.stream().map(Direction::getCountry).collect(Collectors.toSet());
+                        case "/directions":
+                            List<String> countries = session.createQuery("select distinct country from Direction D", String.class).list();
                             countries.forEach(country -> {
                                 sendMsgWithOneBtn(message,
                                       "Страна: " + country,
@@ -69,9 +69,26 @@ public class Bot extends TelegramLongPollingBot {
                                 );
                              });
                             break;
+                        case "/orders":
+                            List<User> u = session.createQuery("from User U where U.chat_id = :chat_id",User.class)
+                                    .setParameter("chat_id", message.getChatId())
+                                            .list();
+                            if(u.size()==0)
+                                sendMsg(message,"Ваш список заказов пуст");
+                            else{
+                                final String[] msg = {"Заказы:\r\n"};
+                                final int[] i = {1};
+                                u.get(0).getOrders().forEach(ord->{
+                                    msg[0]+=i[0]+". Отель: "+ord.getHotel().getName()+" Номер: "+ ord.getRoom().getRoomCategory().getName()+
+                                            " Дата заезда: " + ord.getDateStart()+" Дата выезда: " + ord.getDateEnd()+"\r\n";
+                                });
+                                sendMsg(message,msg[0]);
+                            }
+                            break;
                         default:
                             sendMsg(message, "Неизвестная команда");
                     }
+                    break;
                 case NAME:
                     switch (message.getText()){
                         case "/break":
@@ -126,16 +143,90 @@ public class Bot extends TelegramLongPollingBot {
                             session.beginTransaction();
                             session.save(user);
                             session.getTransaction().commit();
-                            if(session.createQuery("from User U where U.chat_id = :chat_id", User.class)
+                            List<User> newUser= session.createQuery("from User U where U.chat_id = :chat_id", User.class)
                                 .setParameter("chat_id",message.getChatId())
-                                .list().size()==0)
-                                sendMsg(message, "Не получилось зарегестрировать пользователся");
-                                    else
-                                        sendMsg(message, "Пользовотель успешно зарегестрирован.\r\n" +
-                                                "Введите дату начала брони в формате (dd.mm.yyyy");
+                                .list();
+                            if(newUser.size()==0){
+                                state = UserState.IDLE;
+                                sendMsg(message, "Не получилось зарегестрировать пользователся, повторите попытку");
+                            }
+                            else{
+                                user = newUser.get(0);
+                                state = UserState.FIRSTDAME;
+                                sendMsg(message, "Пользовотель успешно зарегестрирован.\r\n" +
+                                        "Введите дату начала брони в формате dd.mm.yyyy (для прекращения бронирования введите /break):");
+                                order = new Order();
+                                order.setUser(user);
+                                order.setRoom(this.room);
+                                order.setHotel(this.room.getHotel());
+
+                            }
                             break;
                     }
                     break;
+                case FIRSTDAME:
+                    switch (message.getText()){
+                        case "/break":
+                            state = UserState.IDLE;
+                            break;
+                        default:
+                            try{
+                            java.sql.Date date = new java.sql.Date(
+                                ((java.util.Date) new SimpleDateFormat("dd.MM.yyyy").parse(message.getText())).getTime());
+                                order.setDateStart(date);
+                                state = UserState.SECONDDATE;
+                                sendMsg(message, "Введите дату конца брони в формате dd.MM.yyyy (для прекращения бронирования введите /break):");
+                            }catch (ParseException e){
+                                sendMsg(message, "Вы ввели дату в неверном формате, необходимый формат dd.MM.yyyy (для прекращения бронирования введите /break):");
+                            }
+
+                            break;
+                    }
+                    break;
+                case SECONDDATE:
+                    switch (message.getText()){
+                        case "/break":
+                            state = UserState.IDLE;
+                            break;
+                        default:
+                            try{
+                                java.sql.Date date = new java.sql.Date(
+                                        ((java.util.Date) new SimpleDateFormat("dd.MM.yyyy").parse(message.getText())).getTime());
+                                order.setDateEnd(date);
+                                state = UserState.PENDINGCONFIRMATION;
+
+                                setUpMsgWithTwoButton(message,
+                                        "Вы выбрали:\r\n" +
+                                                "Номер: "+order.getRoom().getRoomCategory().getName()+
+                                        "\r\nВ отеле: "+ order.getHotel().getName()+
+                                                "\r\n C "+ sdf.format(order.getDateStart())+" по "+ sdf.format(order.getDateEnd())+
+                                                "\r\n Ваш Email: "+ order.getUser().getEmail(),
+
+                                        "Подтвердить",
+                                        "Отменить",
+                                        "Confirmation ",
+                                        "Rejection "
+
+                                );
+                            }catch (ParseException e){
+                                sendMsg(message, "Вы ввели дату в неверном формате, необходимый формат dd.MM.yyyy (для прекращения бронирования введите /break):");
+                            }
+
+                            break;
+                    }
+                    break;
+                case PENDINGCONFIRMATION:
+                    switch (message.getText()){
+                        case "/break":
+                            state = UserState.IDLE;
+                            break;
+                        default:
+                            sendMsg(message,"Неизвестная команда.");
+                    }
+                    break;
+
+
+
 
 
 
@@ -212,7 +303,7 @@ public class Bot extends TelegramLongPollingBot {
                     final String[] msg = {"Удобства: \r\n"};
                     final int[] i = {1};
                     room.getRoomCategory().getFacilities().forEach(fac->{
-                        msg[0] += i[0] + fac.getName();
+                        msg[0] += i[0] +". "+ fac.getName()+"\r\n";
                         i[0]++;
                     });
                     sendMsg(message, msg[0]);
@@ -225,23 +316,52 @@ public class Bot extends TelegramLongPollingBot {
                             state = UserState.NAME;
                             user = new User();
                             user.setChatId(message.getChatId());
-                            roomId = callBackData.split(" ")[2];
+                            this.room = session.get(Room.class, Integer.parseInt(callBackData.split(" ")[2]));
                             sendMsg(message, "Введите ваше имя (для прекращения регистрации введите /break):");
                             break;
                         default:
-                            List<User> user = session.createQuery("from User U where U.chat_id = :chat_id", User.class)
+                            List<User> us = session.createQuery("from User U where U.chat_id = :chat_id", User.class)
                                     .setParameter("chat_id",message.getChatId())
                                     .list();
-                            if(user.size()==0){
+                            if(us.size()==0){
                                 String roomId = callBackData.split(" ")[1];
                                 sendRegisterMsg(message,
                                         "Вы не зарегестрированы.\r\n" +
                                                 "Хотите создать пользователя и забронировать номер?",
                                         "Room Register "+roomId
                                 );}
+                            else{
+                                user = us.get(0);
+                                state = UserState.FIRSTDAME;
+                                this.room = session.get(Room.class, Integer.parseInt(callBackData.split(" ")[1]));
+                                sendMsg(message, "Введите дату начала брони в формате dd.mm.yyyy (для прекращения бронирования введите /break):");
+                                order = new Order();
+                                order.setUser(user);
+                                order.setRoom(this.room);
+                                order.setHotel(this.room.getHotel());
+                            }
+
                             break;
                     }
-
+                    break;
+                case "Confirmation":
+                    if(state != UserState.PENDINGCONFIRMATION)
+                        break;
+                    session.beginTransaction();
+                    int orderId = (int) session.save(order);
+                    System.out.println( orderId);
+                    session.getTransaction().commit();
+                    if(!session.get(Order.class, orderId).equals(null)){
+                        sendMsg(message, "Номер успешно забронирован");
+                        state = UserState.IDLE;
+                    }else {
+                        sendMsg(message, "Что-то пошло не так, попробуйте снова");
+                        state = UserState.IDLE;
+                    }
+                    break;
+                case "Rejection":
+                    state =UserState.IDLE;
+                    sendMsg(message, "Бронирование отменено");
                     break;
                 default:
                     sendMsg(message, "Неизвестная команда");
@@ -288,7 +408,7 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     public synchronized void sendHotelMsg(Message message, String text, String data, String excursions) {
-        setUpMsgWithTwoButton(message,text,"Забронировать","Экскурсии",data,excursions);
+        setUpMsgWithTwoButton(message,text,"Выбрать","Экскурсии",data,excursions);
     }
 
     public synchronized void sendRoomMsg(Message message, String text, String data, String facilities) {
